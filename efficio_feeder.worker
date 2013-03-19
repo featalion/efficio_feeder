@@ -1,0 +1,7 @@
+runtime "ruby"
+exec "efficio_feeder_worker.rb"
+
+file "iron.json"
+file "config.yaml"
+
+gemfile "Gemfile"

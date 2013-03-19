@@ -1,0 +1,10 @@
+streams:
+  - feeds:
+      - http://featalion.blogspot.com/feeds/posts/default
+      - http://blog.iron.io/feeds/posts/default
+    subscribers:
+      - http://first.your.end.point.com/post_update
+      - http://second.your.end.point.com/post_update
+    queue_name: feeds_notifications
+    cache_name: feeds
+    output_type: rss2.0 # rss0.9, rss1.0, rss2.0, atom, atom1.0
