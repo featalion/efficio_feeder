@@ -65,3 +65,13 @@ Parameters:
 
 ## Upload and Schedule
 
+First, install `iron_worker_ng` gem
+```
+gem install iron_worker_ng
+```
+
+Then upload and queue (to launch once) or schedule the worker itself
+```
+iron_worker upload efficio_feeder
+iron_worker queue efficio_feeder
+```

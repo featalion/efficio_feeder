@@ -4,11 +4,8 @@ require 'base64'
 require 'open-uri'
 require 'rss'
 
-require 'net/http/pipeline'
 require 'iron_cache'
 require 'iron_mq'
-
-# $DEBUG = true
 
 module EfficioFeeder
 
@@ -17,15 +14,13 @@ module EfficioFeeder
     def initialize(config_file = 'config.yaml')
       @config = YAML.load_file(config_file)
 
-      @iron_cache = IronCache::Client.new
       @iron_mq = IronMQ::Client.new
+      @iron_cache = IronCache::Client.new
     end
 
     def process
       @config['streams'].each do |stream|
-        puts "new queue"
         prepare_queue(stream)
-        puts "new cache"
         @cache = @iron_cache.cache(stream['cache_name'])
 
         stream['feeds'].each { |url| process_feed(url, stream['output_type']) }
@@ -43,7 +38,6 @@ module EfficioFeeder
         feed = RSS::Parser.parse(response)
       end
 
-      puts "get from cache"
       key = generate_key(url)
       if previous = @cache.get(key)
         pfeed = RSS::Parser.parse(previous.value)
@@ -55,14 +49,10 @@ module EfficioFeeder
       messages = feed.items.map do |item|
         { body: {feed_url: url, item: item.to_s}.to_json }
       end
-      if messages.size > 0
-        puts "post to queue #{messages.size} messages"
-        @queue.post(messages)
-      end
+      @queue.post(messages) if messages.size > 0
 
-      puts "put to cache #{response.size} bytes key"
       @cache.put(key, response.to_s)
-      puts "key put"
+
       feed
     end
 
@@ -108,5 +98,3 @@ end
 
 # run the feed processing
 EfficioFeeder::Worker.new.process
-
-puts "done!"
