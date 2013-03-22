@@ -2,7 +2,7 @@ EfficioFeeder (RSS/Atom aggregator with WebHooks)
 --
 
 EfficioFeeder processes RSS/Atom streams.
-Each stream can contain one or more RSS/Atom feeds to process and number of HTTP endpoints to POST new items to.
+Each stream can contain one or more RSS/Atom feeds to process and number of HTTP endpoints to POST new items.
 
 Fully Cloud-based, uses [Iron.io](http://iron.io) infrastructure.
 
@@ -57,10 +57,10 @@ Parameters:
 
 * `streams`: required, `Array` of `Hash`es which are contains next fields
   * `feeds`: required, `Array` of `String`s. Each element in it will be treat as RSS/Atom feed URL
-  * `subscribers: required, `Array of `Strings`. Each element in it will be treated as endpoint URL to POST new feed's items to
+  * `subscribers: required, `Array of `Strings`. Each element in it will be treated as endpoint URL to POST new stream's items
   * `queue_name`: required, name of your queue on Iron.io to send stream's new items
   * `cache_name`: required, name of the cache to store latest feeds' data
-  * `output_type`: optional, `String` type of the items to POST to endpoint. Acceptable values are `rss0.9`, `rss1.0`, `rss2.0`, `atom`, `atom1.0`.
+  * `output_type`: optional, `String` type of the items to POST to endpoint. Acceptable values are `rss0.9`, `rss1.0`, `rss2.0`, `atom`, `atom1.0`
 
 
 ## Upload and Schedule

@@ -130,7 +130,7 @@ module EfficioFeeder
         end
       end
 
-      @cache.put(key, "#{COMPOSITE_PREFIX}#{keys.join(KEY_SEPARATOR)}"
+      @cache.put(key, "#{COMPOSITE_PREFIX}#{keys.join(KEY_SEPARATOR)}")
     end
 
     def merge_feed(keys_storage)
