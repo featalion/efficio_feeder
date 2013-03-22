@@ -11,6 +11,10 @@ module EfficioFeeder
 
   class Worker
 
+    COMPOSITE_PREFIX = '!!!composite: '
+    MAX_FEED_SIZE = 700_000
+    KEY_SEPARATOR = ' | '
+
     def initialize(config_file = 'config.yaml')
       @config = YAML.load_file(config_file)
 
@@ -39,8 +43,8 @@ module EfficioFeeder
       end
 
       key = generate_key(url)
-      if previous = @cache.get(key)
-        pfeed = RSS::Parser.parse(previous.value)
+      if previous = get_latest_feed(key)
+        pfeed = RSS::Parser.parse(previous)
         remove_old_items(feed, pfeed)
       end
 
@@ -51,7 +55,7 @@ module EfficioFeeder
       end
       @queue.post(messages) if messages.size > 0
 
-      @cache.put(key, response.to_s)
+      put_latest_feed(key, response)
 
       feed
     end
@@ -75,11 +79,11 @@ module EfficioFeeder
         current_feed.items.delete_if do |citem|
           id_check = case current_feed.feed_type
                      when 'atom'
-                       nil_or_equal(citem.id, oitem.id)
+                       nil_or_equal?(citem.id, oitem.id)
                      when 'rss'
-                       nil_or_equal(citem.guid, oitem.guid)
+                       nil_or_equal?(citem.guid, oitem.guid)
                      end
-          link_check = nil_or_equal(citem.link, oitem.link)
+          link_check = nil_or_equal?(citem.link, oitem.link)
 
           id_check || link_check
         end
@@ -88,8 +92,66 @@ module EfficioFeeder
       current_feed
     end
 
-    def nil_or_equal(which, to)
+    def nil_or_equal?(which, to)
       which.nil? || which.to_s == to.to_s
+    end
+
+    def get_latest_feed(key)
+      latest = @cache.get(key)
+      return nil if latest.nil?
+
+      feed = latest.value
+      feed = merge_feed(feed) if composite_feed?(feed)
+
+      feed
+    end
+
+    def put_latest_feed(key, feed)
+      if feed.size > MAX_FEED_SIZE
+        split_feed(key, feed)
+      else
+        @cache.put(key, feed.to_s)
+      end
+    end
+
+    def split_feed(key, feed)
+      keys = []
+      part = nil
+      while true do
+        k = "#{key}_#{keys.size}"
+        start_pos = keys.size * MAX_FEED_SIZE
+        part = feed[start_pos...start_pos+MAX_FEED_SIZE]
+
+        unless part.nil? || part.empty?
+          @cache.put(k, part)
+          keys << k
+        else
+          break
+        end
+      end
+
+      @cache.put(key, "#{COMPOSITE_PREFIX}#{keys.join(KEY_SEPARATOR)}"
+    end
+
+    def merge_feed(keys_storage)
+      keys = get_composite_keys(keys_storage)
+      keys.each_with_object(String.new) do |key, feed|
+        item = @cache.get(key)
+        if item
+          feed << item.value
+          item.delete
+        else
+          raise 'Composite feed is corrupted!'
+        end
+      end
+    end
+
+    def composite_feed?(feed)
+      feed =~ /^#{COMPOSITE_PREFIX}/
+    end
+
+    def get_composite_keys(storage)
+      storage.sub(/^#{COMPOSITE_PREFIX}/, '').split(KEY_SEPARATOR)
     end
 
   end
